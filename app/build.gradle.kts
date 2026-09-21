@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.rajeshkavadi.ainews"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.rajeshkavadi.ainews"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,7 +53,10 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+    // BOM 2024.12.01 -> Compose UI 1.7.6 + Material3 1.3.1. This line is
+    // compiled against API 34 (Compose 1.7.x), so it does NOT force compileSdk 35,
+    // while still including PullToRefreshBox (added in Material3 1.3.0).
+    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -65,13 +68,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    // AndroidX core / lifecycle / activity
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    // AndroidX core / lifecycle / activity — pinned to versions compiled against
+    // API 34 so they don't require compileSdk 35 (1.15.0 / 2.8.7 / 1.10.x do).
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     // Provides collectAsStateWithLifecycle()
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")

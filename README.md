@@ -76,15 +76,24 @@ Requires Android Studio (Ladybug or newer) or a local Android SDK.
 
 Or just open the project in Android Studio and hit Run.
 
-- `minSdk 24`, `targetSdk 35`, `compileSdk 35`
-- AGP 8.7.3, Kotlin 2.0.21, Gradle 8.11.1 (wrapper committed)
+- `minSdk 24`, `targetSdk 34`, `compileSdk 34`, build-tools `34.0.0`
+- AGP 8.5.2, Kotlin 2.0.21, Gradle 8.9 (wrapper committed), JDK 17
+- AndroidX/Compose versions are pinned to releases compiled against API 34
+  (Compose BOM 2024.12.01, core-ktx 1.13.1, lifecycle 2.8.4, activity 1.9.0) so
+  the build does **not** require compileSdk 35.
 
-> **Build not verified in CI/this environment.** This project was authored in a
-> sandbox where Google's Maven (`dl.google.com`) is network-blocked, so the
-> Android toolchain and AndroidX artifacts could not be downloaded and a full
-> `gradle` build could not be executed here. The code has been reviewed for
-> compile correctness, but **run `./gradlew assembleDebug` locally to confirm**
-> before relying on it.
+### CI
+
+`.github/workflows/android.yml` builds on an Ubuntu runner with Temurin 17,
+installs `platforms;android-34` + `build-tools;34.0.0`, runs the unit tests and
+`assembleDebug`, and uploads the result as the **`app-debug-apk`** artifact
+(download it from the workflow run's Artifacts section).
+
+> **Not built in the authoring sandbox.** This project was written where Google's
+> Maven (`dl.google.com`) is network-blocked, so no Gradle build could run here.
+> The toolchain is aligned to a known-good API-34 stack and the code reviewed for
+> compile correctness; the CI workflow above is the source of truth — check its
+> run for a green build and the APK artifact.
 
 ## Testing
 
