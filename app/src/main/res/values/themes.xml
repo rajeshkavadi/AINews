@@ -1,0 +1,8 @@
+<resources>
+    <!-- Base app theme. The UI itself is themed in Compose (AINewsTheme); this
+         XML theme only needs to be a Material3 no-action-bar shell so the
+         Activity has a valid launch theme. -->
+    <style name="Theme.AINews" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>
