@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,9 +44,22 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK (workflow artifact)
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # Publishes the APK as an asset on a rolling "latest-debug" release, so it
+      # has a stable, directly downloadable URL that needs no GitHub login
+      # (this repo is public):
+      #   https://github.com/rajeshkavadi/AINews/releases/download/latest-debug/app-debug.apk
+      - name: Publish APK to rolling release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-debug
+          name: Latest debug build
+          body: "Auto-built debug APK from commit ${{ github.sha }}"
+          files: app/build/outputs/apk/debug/app-debug.apk
