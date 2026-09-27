@@ -4,9 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 
 /** Outcome of a headline load: the ranked list plus which sources failed. */
@@ -16,37 +16,57 @@ data class HeadlinesResult(
 )
 
 /**
- * Fetches every configured feed in parallel, then merges the results into a
- * single ranked list.
+ * Fetches feeds in parallel and merges them into a single ranked list, per tab.
  *
  * Design decisions worth defending:
  *  - One slow or dead feed must not block or fail the whole screen, so each fetch
  *    is isolated and failures are collected, not thrown.
- *  - "Top 15" is explicitly recency-ranked with a per-source cap, NOT an
- *    importance ranking. On-device we have no signal for global importance; the
- *    cap just stops one prolific feed from crowding out the rest.
+ *  - "Top 15" is recency-ranked with a per-source cap, NOT an importance ranking.
+ *  - For the Start-ups tab the list is *composed*: ~5 space items (space feeds,
+ *    company-named items prioritized) + the rest from global startup feeds. The 5
+ *    is a target with recency backfill, not a hard guarantee that all 5 are pure
+ *    "startups" — no on-device signal can promise that.
  */
 class NewsRepository(
-    private val sources: List<NewsSource> = NewsSources.ALL,
     private val client: OkHttpClient = defaultClient()
 ) {
 
-    suspend fun loadTopHeadlines(limit: Int = 15): HeadlinesResult = coroutineScope {
-        val failed = mutableListOf<String>()
+    suspend fun loadTopHeadlines(category: Category, limit: Int = 15): HeadlinesResult =
+        coroutineScope {
+            val failed = Collections.synchronizedList(mutableListOf<String>())
+            val articles = when (category) {
+                Category.AI ->
+                    rank(fetchAll(NewsSources.AI_SOURCES, failed), limit)
 
-        val perSource = sources.map { source ->
+                Category.STARTUPS -> {
+                    val spaceDef = async { fetchAll(NewsSources.STARTUP_SPACE_SOURCES, failed) }
+                    val generalDef = async { fetchAll(NewsSources.STARTUP_GENERAL_SOURCES, failed) }
+                    composeStartups(
+                        space = spaceDef.await(),
+                        general = generalDef.await(),
+                        limit = limit,
+                        spaceQuota = 5
+                    )
+                }
+            }
+            HeadlinesResult(articles = articles, failedSources = failed.toList())
+        }
+
+    /** Fetches every source concurrently; per-source failures are recorded, not thrown. */
+    private suspend fun fetchAll(
+        sources: List<NewsSource>,
+        failed: MutableList<String>
+    ): List<Article> = coroutineScope {
+        sources.map { source ->
             async(Dispatchers.IO) {
                 try {
                     fetchAndParse(source)
                 } catch (e: Exception) {
-                    synchronized(failed) { failed.add(source.name) }
+                    failed.add(source.name)
                     emptyList()
                 }
             }
         }.awaitAll().flatten()
-
-        val ranked = rank(perSource, limit)
-        HeadlinesResult(articles = ranked, failedSources = failed)
     }
 
     private fun fetchAndParse(source: NewsSource): List<Article> {
@@ -62,45 +82,89 @@ class NewsRepository(
             }
             val body = response.body ?: throw IllegalStateException("Empty body for ${source.feedUrl}")
             val raw = body.byteStream().use { RssParser.parse(it, source.name) }
-            return if (source.aiFilterNeeded) raw.filter(::isAiRelevant) else raw
+            val keywords = source.filterKeywords
+            return if (keywords == null) raw else raw.filter { matchesAny(it, keywords) }
         }
     }
 
-    private fun isAiRelevant(article: Article): Boolean {
+    private fun matchesAny(article: Article, keywords: List<String>): Boolean {
         val haystack = " ${article.title.lowercase()} ${article.summary?.lowercase().orEmpty()} "
-        return NewsSources.AI_KEYWORDS.any { haystack.contains(it) }
+        return keywords.any { haystack.contains(it) }
     }
 
-    /**
-     * Merge rule: de-duplicate by [Article.dedupeKey], sort newest-first (undated
-     * items last), then apply a per-source cap so the final [limit] stays diverse.
-     */
+    // --- AI ranking: dedupe -> recency -> per-source cap -> backfill --------------
     private fun rank(articles: List<Article>, limit: Int): List<Article> {
-        val deduped = articles
+        val deduped = dedupeSort(articles)
+        val maxPerSource = maxOf(2, limit / 3)
+        return capPerSource(deduped, limit, maxPerSource)
+    }
+
+    // --- Start-ups composition ---------------------------------------------------
+    private fun composeStartups(
+        space: List<Article>,
+        general: List<Article>,
+        limit: Int,
+        spaceQuota: Int
+    ): List<Article> {
+        // Prioritize space items that name an actual company, then by recency.
+        val spaceRanked = dedupeSort(space).sortedWith(
+            compareByDescending<Article> { matchesAny(it, NewsSources.SPACE_COMPANY_KEYWORDS) }
+                .thenByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
+        )
+        val spacePick = spaceRanked.take(spaceQuota)
+        val takenKeys = spacePick.mapTo(mutableSetOf()) { it.dedupeKey }
+
+        // Fill the remaining slots from global startup feeds (excluding dupes),
+        // capped per source for diversity.
+        val generalRanked = dedupeSort(general).filter { it.dedupeKey !in takenKeys }
+        val generalPick = capPerSource(generalRanked, limit - spacePick.size, maxPerSource = 3)
+
+        var combined = spacePick + generalPick
+
+        // Backfill if either pool came up short (few feeds responded).
+        if (combined.size < limit) {
+            val keys = combined.mapTo(mutableSetOf()) { it.dedupeKey }
+            val leftovers = dedupeSort(space + general).filter { it.dedupeKey !in keys }
+            combined = combined + leftovers.take(limit - combined.size)
+        }
+
+        // Display newest-first while preserving the composed membership.
+        return combined
+            .sortedByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
+            .take(limit)
+    }
+
+    // --- Shared helpers ----------------------------------------------------------
+    private fun dedupeSort(articles: List<Article>): List<Article> =
+        articles
             .filter { it.dedupeKey.isNotBlank() }
-            .associateBy { it.dedupeKey }  // last write wins; acceptable for dupes
+            .associateBy { it.dedupeKey }   // last write wins for dupes
             .values
             .sortedByDescending { it.publishedAtMillis ?: Long.MIN_VALUE }
 
-        val maxPerSource = maxOf(2, (limit / 3))
+    private fun capPerSource(
+        sorted: List<Article>,
+        limit: Int,
+        maxPerSource: Int
+    ): List<Article> {
+        if (limit <= 0) return emptyList()
         val counts = mutableMapOf<String, Int>()
-        val diverse = mutableListOf<Article>()
-        for (a in deduped) {
+        val out = mutableListOf<Article>()
+        for (a in sorted) {
             val c = counts.getOrDefault(a.sourceName, 0)
             if (c < maxPerSource) {
-                diverse.add(a)
+                out.add(a)
                 counts[a.sourceName] = c + 1
             }
-            if (diverse.size == limit) break
+            if (out.size == limit) break
         }
-        // If the cap left us short (few sources responded), backfill from the rest.
-        if (diverse.size < limit) {
-            for (a in deduped) {
-                if (diverse.size == limit) break
-                if (a !in diverse) diverse.add(a)
+        if (out.size < limit) {
+            for (a in sorted) {
+                if (out.size == limit) break
+                if (a !in out) out.add(a)
             }
         }
-        return diverse
+        return out
     }
 
     companion object {

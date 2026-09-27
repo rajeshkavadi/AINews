@@ -1,9 +1,14 @@
 # AI News (Android)
 
-A self-contained Android app that aggregates the latest **AI headlines from
-around the world** and shows the top 15 in a clean, tappable list. No backend,
-no API keys, no running costs — the app fetches RSS/Atom feeds directly on the
-device, deduplicates across sources, and ranks the result.
+A self-contained Android app that aggregates the latest headlines from around
+the world and shows the top 15 per topic in a clean, tappable list. Two tabs at
+the top — **AI** (default) and **Start-ups** — each with its own sources. No
+backend, no API keys, no running costs — the app fetches RSS/Atom feeds directly
+on the device, deduplicates across sources, and ranks the result.
+
+The **Start-ups** tab is *composed*: ~5 items about space companies (SpaceX,
+Skyroot, Agnikul, Rocket Lab, Blue Origin, Pixxel, Dhruva Space…) plus ~10 from
+global startup feeds. The 5 is a target with recency backfill — see *Sources*.
 
 ## What this is (and what it honestly is not)
 
@@ -33,6 +38,17 @@ To keep global/topical coverage meaningful, these reputable AI feeds are added:
 **VentureBeat AI, MIT Technology Review AI, The Verge AI, Google Research,
 Hugging Face**.
 
+**Start-ups tab** pulls from two groups:
+- *Global startup feeds:* TechCrunch Startups, Crunchbase News, EU-Startups,
+  Tech.eu, YourStory, Inc42, Entrackr (US + Europe + India spread).
+- *Space feeds:* SpaceNews, Space.com, Ars Technica Space — from which the
+  repository prioritizes items naming a space **company** to fill ~5 slots.
+
+Honest caveat on the "5 space" rule: no RSS feed emits only "space-startup"
+news, so the 5 are selected by company keywords from space feeds with recency
+backfill; a slot may occasionally be broader space news rather than a pure
+startup. True per-item classification would need a backend/LLM layer.
+
 All sources live in one file — `app/src/main/java/.../data/NewsSource.kt` — so
 adding, removing, or re-pointing a feed is a one-line change. If a feed URL dies
 or changes, only that source degrades; the rest still load, and the app tells the
@@ -55,12 +71,13 @@ app/src/main/java/com/rajeshkavadi/ainews/
 ├── MainActivity.kt
 ├── data/
 │   ├── Article.kt          # normalized model + dedupe key
+│   ├── Category.kt         # AI / Start-ups tabs
 │   ├── NewsSource.kt       # the source registry (edit feeds here)
 │   ├── RssParser.kt        # RSS 2.0 + Atom parser
-│   └── NewsRepository.kt   # concurrent fetch, filter, dedupe, rank
+│   └── NewsRepository.kt   # concurrent fetch, filter, dedupe, rank, compose
 └── ui/
-    ├── HeadlinesViewModel.kt
-    ├── HeadlinesScreen.kt
+    ├── NewsViewModel.kt    # per-tab state + caching
+    ├── HeadlinesScreen.kt  # tabs + list
     └── theme/Theme.kt
 ```
 

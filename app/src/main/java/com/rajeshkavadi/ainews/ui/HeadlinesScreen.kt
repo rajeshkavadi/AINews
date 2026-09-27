@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -47,33 +49,47 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.rajeshkavadi.ainews.data.Article
+import com.rajeshkavadi.ainews.data.Category
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HeadlinesScreen(viewModel: HeadlinesViewModel = viewModel()) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+fun HeadlinesScreen(viewModel: NewsViewModel = viewModel()) {
+    val selected by viewModel.selected.collectAsStateWithLifecycle()
+    val states by viewModel.states.collectAsStateWithLifecycle()
+    val state = states[selected] ?: HeadlinesUiState(isLoading = true)
     val context = LocalContext.current
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("AI News", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Top 15 · latest AI headlines worldwide",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("AI News", fontWeight = FontWeight.Bold)
+                            Text(
+                                selected.subtitle,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.refresh() }) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                        }
+                    }
+                )
+                TabRow(selectedTabIndex = selected.ordinal) {
+                    Category.values().forEach { category ->
+                        Tab(
+                            selected = category == selected,
+                            onClick = { viewModel.selectCategory(category) },
+                            text = { Text(category.title) }
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                    }
                 }
-            )
+            }
         }
     ) { padding ->
         PullToRefreshBox(
