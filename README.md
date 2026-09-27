@@ -1,10 +1,15 @@
 # AI News (Android)
 
 A self-contained Android app that aggregates the latest headlines from around
-the world and shows the top 15 per topic in a clean, tappable list. Two tabs at
-the top — **AI** (default) and **Start-ups** — each with its own sources. No
-backend, no API keys, no running costs — the app fetches RSS/Atom feeds directly
-on the device, deduplicates across sources, and ranks the result.
+the world and shows the top 15 per topic in a clean, tappable list. Three tabs at
+the top — **AI** (default), **Start-ups**, and **Podcasts/TED**. No backend, no
+API keys, no running costs.
+
+- **AI** and **Start-ups** are *live*: the app fetches RSS/Atom feeds on the
+  device, dedupes across sources, and ranks by recency.
+- **Podcasts/TED** is *curated*: a hand-picked, bundled list of 15 timeless
+  "best & useful" picks (8 of them neuroscience/psychology). It's static by
+  design — "best", not "latest" — and needs no network.
 
 The **Start-ups** tab is *composed*: ~5 items about space companies (SpaceX,
 Skyroot, Agnikul, Rocket Lab, Blue Origin, Pixxel, Dhruva Space…) plus ~10 from
@@ -49,7 +54,14 @@ news, so the 5 are selected by company keywords from space feeds with recency
 backfill; a slot may occasionally be broader space news rather than a pure
 startup. True per-item classification would need a backend/LLM layer.
 
-All sources live in one file — `app/src/main/java/.../data/NewsSource.kt` — so
+**Podcasts/TED tab** is not a feed — it's the `CURATED_PODCASTS` list in
+`NewsSource.kt`: 15 hand-picked shows/talks (Huberman Lab, Hidden Brain, and TED
+talks by Anil Seth, Wendy Suzuki, Robert Waldinger, Brené Brown, Kelly McGonigal,
+Amy Cuddy, plus Lex Fridman, Tim Ferriss, How I Built This, Ken Robinson, Simon
+Sinek, Freakonomics, Radiolab). Edit that list to change the picks; the displayed
+order is the curated order (not recency).
+
+All live sources are in one file — `app/src/main/java/.../data/NewsSource.kt` — so
 adding, removing, or re-pointing a feed is a one-line change. If a feed URL dies
 or changes, only that source degrades; the rest still load, and the app tells the
 user which sources didn't respond.

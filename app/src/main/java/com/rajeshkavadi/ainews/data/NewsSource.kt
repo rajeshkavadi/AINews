@@ -92,4 +92,112 @@ object NewsSources {
         NewsSource("Space.com", "https://www.space.com/feeds/all"),
         NewsSource("Ars Technica Space", "https://arstechnica.com/space/feed/")
     )
+
+    // -------------------------------------------------- Podcasts/TED tab (curated)
+    // A hand-picked, timeless list of 15 — "best & useful", not latest. 8 of the
+    // 15 are neuroscience/psychology (exceeding the >=5 ask). Edit this list to
+    // change the picks; it ships in the app and needs no network.
+    // Ordering here is the display order (curated, not recency-ranked).
+    val CURATED_PODCASTS: List<Article> = listOf(
+        pick(
+            "Huberman Lab — practical neuroscience for daily life",
+            "https://www.hubermanlab.com/",
+            "Podcast · Andrew Huberman",
+            "Stanford neuroscientist on sleep, focus, dopamine and habits — with actionable protocols."
+        ),
+        pick(
+            "Your brain hallucinates your conscious reality",
+            "https://www.ted.com/talks/anil_seth_your_brain_hallucinates_your_conscious_reality",
+            "TED · Anil Seth",
+            "Neuroscience of consciousness: how the brain constructs the reality you experience."
+        ),
+        pick(
+            "The brain-changing benefits of exercise",
+            "https://www.ted.com/talks/wendy_suzuki_the_brain_changing_benefits_of_exercise",
+            "TED · Wendy Suzuki",
+            "How movement reshapes memory, mood and the aging brain."
+        ),
+        pick(
+            "What makes a good life? Lessons from the longest study on happiness",
+            "https://www.ted.com/talks/robert_waldinger_what_makes_a_good_life_lessons_from_the_longest_study_on_happiness",
+            "TED · Robert Waldinger",
+            "75-year Harvard study on what actually predicts a happy, healthy life."
+        ),
+        pick(
+            "The power of vulnerability",
+            "https://www.ted.com/talks/brene_brown_the_power_of_vulnerability",
+            "TED · Brené Brown",
+            "Landmark psychology talk on connection, shame and courage."
+        ),
+        pick(
+            "How to make stress your friend",
+            "https://www.ted.com/talks/kelly_mcgonigal_how_to_make_stress_your_friend",
+            "TED · Kelly McGonigal",
+            "Reframing the psychology of stress to make it work for you."
+        ),
+        pick(
+            "Your body language may shape who you are",
+            "https://www.ted.com/talks/amy_cuddy_your_body_language_may_shape_who_you_are",
+            "TED · Amy Cuddy",
+            "Psychology of posture, presence and confidence."
+        ),
+        pick(
+            "Hidden Brain — the unconscious patterns that drive behavior",
+            "https://hiddenbrain.org/",
+            "Podcast · Shankar Vedantam",
+            "Behavioral science and psychology behind why we do what we do."
+        ),
+        pick(
+            "Lex Fridman Podcast — long-form science & technology",
+            "https://lexfridman.com/podcast/",
+            "Podcast · Lex Fridman",
+            "Deep conversations with scientists, engineers and founders on AI and the mind."
+        ),
+        pick(
+            "The Tim Ferriss Show — tools and routines of top performers",
+            "https://tim.blog/podcast/",
+            "Podcast · Tim Ferriss",
+            "Deconstructing the habits, tactics and decisions of world-class performers."
+        ),
+        pick(
+            "How I Built This — the stories behind great companies",
+            "https://www.npr.org/podcasts/510313/how-i-built-this",
+            "Podcast · Guy Raz (NPR)",
+            "Founders on how they built their startups, in their own words."
+        ),
+        pick(
+            "Do schools kill creativity?",
+            "https://www.ted.com/talks/sir_ken_robinson_do_schools_kill_creativity",
+            "TED · Sir Ken Robinson",
+            "The most-watched TED talk ever — on creativity and how we learn."
+        ),
+        pick(
+            "How great leaders inspire action",
+            "https://www.ted.com/talks/simon_sinek_how_great_leaders_inspire_action",
+            "TED · Simon Sinek",
+            "\"Start with why\" — the psychology of leadership and motivation."
+        ),
+        pick(
+            "Freakonomics Radio — the hidden side of everything",
+            "https://freakonomics.com/series/freakonomics-radio/",
+            "Podcast · Stephen Dubner",
+            "Economics and incentives applied to everyday questions."
+        ),
+        pick(
+            "Radiolab — science, storytelling and big questions",
+            "https://radiolab.org/",
+            "Podcast · WNYC",
+            "Award-winning science storytelling that reshapes how you see the world."
+        )
+    )
+
+    /** Small builder for curated items (no date/image; curated order is kept). */
+    private fun pick(title: String, link: String, source: String, why: String) = Article(
+        title = title,
+        link = link,
+        sourceName = source,
+        summary = why,
+        imageUrl = null,
+        publishedAtMillis = null
+    )
 }

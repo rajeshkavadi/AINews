@@ -35,6 +35,9 @@ class NewsRepository(
         coroutineScope {
             val failed = Collections.synchronizedList(mutableListOf<String>())
             val articles = when (category) {
+                // Curated, bundled list — no network, curated order preserved.
+                Category.PODCASTS -> NewsSources.CURATED_PODCASTS.take(limit)
+
                 Category.AI ->
                     rank(fetchAll(NewsSources.AI_SOURCES, failed), limit)
 
