@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Content sits within the central safe zone so launcher masks don't clip it. -->
+    <!-- The "C" aperture (open on the right) -->
+    <path
+        android:pathData="M73.092,73.092 A27,27 0 1 1 73.092,34.908"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="10"
+        android:strokeLineCap="round" />
+    <!-- Three feed bars; the top one is the teal accent -->
+    <path android:pathData="M40,44 L64,44" android:strokeColor="#2FE3C6"
+        android:strokeWidth="5" android:strokeLineCap="round" />
+    <path android:pathData="M40,54 L60,54" android:strokeColor="#FFFFFF"
+        android:strokeWidth="5" android:strokeLineCap="round" />
+    <path android:pathData="M40,64 L56,64" android:strokeColor="#FFFFFF"
+        android:strokeWidth="5" android:strokeLineCap="round" />
+</vector>

@@ -1,4 +1,4 @@
-# AI News (Android)
+# CHITS — Curated Headlines: Innovation, Talks, Startups (Android)
 
 A self-contained Android app that aggregates the latest headlines from around
 the world and shows the top 15 per topic in a clean, tappable list. Three tabs at

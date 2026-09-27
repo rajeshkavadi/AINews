@@ -66,7 +66,7 @@ fun HeadlinesScreen(viewModel: NewsViewModel = viewModel()) {
                 TopAppBar(
                     title = {
                         Column {
-                            Text("AI News", fontWeight = FontWeight.Bold)
+                            Text("CHITS", fontWeight = FontWeight.Bold)
                             Text(
                                 selected.subtitle,
                                 style = MaterialTheme.typography.labelSmall,
